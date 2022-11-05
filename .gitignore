@@ -1,0 +1,5 @@
+*.zip
+*.png
+__pycache__
+dev/
+*.egg*
