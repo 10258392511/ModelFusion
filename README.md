@@ -5,7 +5,7 @@
 pip install -r requirements
 pip install -e .
 ```
-To test whether installation is successful, please run at project root directory
+To test whether installation is successful, please run at project root directory:
 ```bash
 python scripts/test_install.py
 ```
