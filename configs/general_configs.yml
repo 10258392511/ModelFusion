@@ -1,1 +1,36 @@
 figsize_unit: 3.6
+datasets:
+  MNMS:
+   path: "E:/Datasets/MnMsSlices"
+   resize_shape: 256
+   aug_rotate_deg: 15
+
+  CIFAR10:
+    path: "E:/Datasets/CIFAR10"
+
+models:
+  UNet:
+    spatial_dims: 2
+    in_channels: 1
+    out_channels: 4
+    channels: [4, 8, 16, 32, 64]
+    strides: [2, 2, 2, 2]
+
+  SwinUNETR:
+    img_size: [256, 256]
+    in_channels: 1
+    out_channels: 4
+    depths: [2, 2, 2, 2]
+    num_heads: [3, 6, 12, 24]
+    feature_size: 24
+    spatial_dims: 2
+
+  ViT:
+    in_channels: 3
+    patch_size: 16
+    img_size: [32, 32]
+    pos_embed: "conv"
+    classification: true
+    spatial_dims: 2
+    num_classes: 10
+
