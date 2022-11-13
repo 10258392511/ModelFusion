@@ -29,8 +29,8 @@ def dict2namespace(config):
         setattr(namespace, key, new_value)
     return namespace
 
-
-GENERAL_CONFIGS = load_yml_file("../configs/general_configs.yml")
+dirname = os.path.dirname(os.path.dirname(__file__))
+GENERAL_CONFIGS = load_yml_file(os.path.join(dirname, "configs/general_configs.yml"))
 
 
 def vis_images(*images, **kwargs):
@@ -50,9 +50,12 @@ def vis_images(*images, **kwargs):
         # channel = 0 if img_iter.shape[0] == 1 else 1
         if isinstance(img_iter, torch.Tensor):
             img_iter = ptu.to_numpy(img_iter)
-        img_iter = img_iter[channel]
-        handle = axis.imshow(img_iter, cmap="gray")
-        plt.colorbar(handle)
+        if img_iter.shape[0] == 3:
+            handle = axis.imshow(img_iter.transpose(1, 2, 0))
+        else:
+            img_iter = img_iter[channel]
+            handle = axis.imshow(img_iter, cmap="gray")
+            plt.colorbar(handle)
         if titles is not None:
             axis.set_title(titles[i])
 

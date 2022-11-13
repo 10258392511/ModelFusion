@@ -14,14 +14,16 @@ from monai.transforms import (
     CropForegroundd,
     Resized,
     RandRotated,
-    RandAdjustContrastd
+    RandAdjustContrastd,
+    RandGaussianNoised
 )
 from monai.data import CacheDataset
 from torchvision.datasets import CIFAR10
 from monai.utils import CommonKeys
 
 
-GENERAL_CONFIGS = load_yml_file("../configs/general_configs.yml")
+dirname = os.path.dirname(os.path.dirname(__file__))
+GENERAL_CONFIGS = load_yml_file(os.path.join(dirname, "configs/general_configs.yml"))
 
 
 def load_individual(filename: str):
@@ -87,7 +89,8 @@ def load_mnms(mode, vendor, if_aug=True, num_workers=4):
         transforms += [
             RandRotated(keys=keys, range_x=np.deg2rad(GENERAL_CONFIGS.datasets.MNMS.aug_rotate_deg),
                         mode=("bilinear", "nearest"), prob=.5),
-            RandAdjustContrastd(keys=CommonKeys.IMAGE, prob=.5)
+            RandAdjustContrastd(keys=CommonKeys.IMAGE, prob=.5),
+            RandGaussianNoised(keys=CommonKeys.IMAGE, prob=0.1, std=GENERAL_CONFIGS.datasets.MNMS.aug_noise_std)
         ]
 
     resize_shape = GENERAL_CONFIGS.datasets.MNMS.resize_shape

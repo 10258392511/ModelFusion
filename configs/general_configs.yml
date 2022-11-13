@@ -4,6 +4,7 @@ datasets:
    path: "E:/Datasets/MnMsSlices"
    resize_shape: 256
    aug_rotate_deg: 15
+   aug_noise_std: 0.1
 
   CIFAR10:
     path: "E:/Datasets/CIFAR10"
@@ -27,10 +28,12 @@ models:
 
   ViT:
     in_channels: 3
-    patch_size: 16
+    patch_size: 4
     img_size: [32, 32]
     pos_embed: "conv"
     classification: true
     spatial_dims: 2
     num_classes: 10
+    post_activation: Identity
+
 
