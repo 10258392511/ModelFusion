@@ -1,5 +1,5 @@
 Segmentation:
-  num_epochs: 50
+  num_epochs: 10
   batch_size: 4
   lr: 0.001
   num_cls: 4

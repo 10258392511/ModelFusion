@@ -5,3 +5,5 @@ dev/
 *.egg*
 *logs/
 *.ipynb_checkpoints/
+dev_*
+configurations/

@@ -78,6 +78,12 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
     for idx, ((layer0_name, fc_layer0_weight), (layer1_name, fc_layer1_weight)) in \
             enumerate(zip(networks[0].named_parameters(), networks[1].named_parameters())):
 
+        ### dev
+        assert fc_layer0_weight.ndim == fc_layer1_weight.ndim
+        if fc_layer0_weight.ndim < 4:
+            continue
+        ###
+
         assert fc_layer0_weight.shape == fc_layer1_weight.shape
         print("Previous layer shape is ", previous_layer_shape)
         previous_layer_shape = fc_layer1_weight.shape
@@ -120,6 +126,11 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             # aligned_wt = None, this caches the tensor and causes OOM
             if is_conv:
                 T_var_conv = T_var.unsqueeze(0).repeat(fc_layer0_weight_data.shape[2], 1, 1)
+                ### dev
+                print(f"{layer0_name}, {layer1_name}")
+                print(f"T_var_conv: {T_var_conv.shape}")
+                print(f"fc_layer0_weight_data: {fc_layer1_weight_data.permute(2, 0, 1).shape}")
+                ###
                 aligned_wt = torch.bmm(fc_layer0_weight_data.permute(2, 0, 1), T_var_conv).permute(1, 2, 0)
 
                 M = ground_metric_object.process(
