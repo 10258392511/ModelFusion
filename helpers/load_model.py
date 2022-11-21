@@ -36,7 +36,7 @@ def reload_model(model_name, model_log_dir):
 
 def turn_off_bias(model: nn.Module):
     for module in model.modules():
-        if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
+        if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear) or isinstance(module, nn.ConvTranspose2d):
             module.bias = None
 
 
