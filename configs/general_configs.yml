@@ -36,5 +36,3 @@ models:
     spatial_dims: 2
     num_classes: 10
     post_activation: Identity
-
-
