@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import onnx
 import onnx.numpy_helper
+import ModelFusion.helpers.pytorch_utils as ptu
 
 # Note:
 # (1). We only want the topological order of modules with parameters. After obtaining the order, we'll operate on
@@ -10,13 +11,15 @@ import onnx.numpy_helper
 # (2). model.state_dict() shares the same keys as model_onnx.graph.initializer
 
 
-def export_as_onnx(model: nn.Module, input_shape: tuple, filename: str):
+def export_as_onnx(model: nn.Module, input_shape: tuple, filename: str, device=None):
     """
-    Performed on CPU
+    Performed on CPU or GPU
     """
     assert ".onnx" in filename
 
-    x_in = torch.randn(input_shape)
+    if device is None:
+        device = ptu.DEVICE
+    x_in = torch.randn(input_shape).to(device)
     torch.onnx.export(model, x_in, filename)
 
 
@@ -104,3 +107,13 @@ def extract_param_graph(graph: nx.DiGraph):
         graph_out.nodes[node]["weight_shape"] = graph.nodes[node]["weight_shape"]
 
     return graph_out
+
+
+def model2graph_wrapper(filename: str):
+    """
+    .onnx file to graph.
+    """
+    graph = onnx2graph_contracted_wrapper(filename)
+    param_graph = extract_param_graph(graph)
+
+    return param_graph
