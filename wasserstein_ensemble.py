@@ -42,7 +42,7 @@ def get_histogram(args, idx, cardinality, layer_name, activations=None, return_n
         else:
             return torch.softmax(unnormalized_weights / args.softmax_temperature, dim=0)
 
-def get_wassersteinized_layers_modularized(args, networks, activations=None, eps=1e-7, test_loader=None):
+def get_wassersteinized_layers_modularized(args, networks, activations=None, eps=1e-7, test_loader=None, return_T=False):
     '''
     Two neural networks that have to be averaged in geometric manner (i.e. layerwise).
     The 1st network is aligned with respect to the other via wasserstein distance.
@@ -59,6 +59,8 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
     # simple_model_1 = get_trained_model(1, model='simplenet')
 
     avg_aligned_layers = []
+    if return_T:
+        T_list = []
     # cumulative_T_var = None
     T_var = None
     # print(list(networks[0].parameters()))
@@ -259,6 +261,9 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             geometric_fc = geometric_fc.view(layer_shape)
         avg_aligned_layers.append(geometric_fc)
 
+        if return_T:
+            T_list.append(T_var)
+
         # get the performance of the model 0 aligned with respect to the model 1
         if args.eval_aligned:
             if is_conv and layer_shape != t_fc0_model.shape:
@@ -270,6 +275,9 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             setattr(args, 'model0_aligned_acc_layer_{}'.format(str(idx)), acc)
             if idx == (num_layers - 1):
                 setattr(args, 'model0_aligned_acc', acc)
+
+    if return_T:
+        return avg_aligned_layers, T_list
 
     return avg_aligned_layers
 
