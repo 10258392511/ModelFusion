@@ -110,10 +110,18 @@ def load_cifar10(mode):
     if not os.path.isdir(root_dir):
         os.makedirs(root_dir)
     transforms = tv_tfm.Compose([
-        tv_tfm.ToTensor()
+        tv_tfm.TrivialAugmentWide(interpolation=tv_tfm.InterpolationMode.BILINEAR),
+        tv_tfm.RandomHorizontalFlip(),
+        tv_tfm.RandomCrop(32, padding=4),
+        tv_tfm.PILToTensor(),
+        tv_tfm.ConvertImageDtype(torch.float),
+        tv_tfm.RandomErasing(p=0.1)
     ])
     if_train = True if mode == "train" else False
-    ds = CIFAR10(root_dir, train=if_train, transform=transforms, download=True)
+    if if_train:
+        ds = CIFAR10(root_dir, train=if_train, transform=transforms, download=True)
+    else:
+        ds = CIFAR10(root_dir, train=if_train, transform=tv_tfm.ToTensor(), download=True)
 
     return ds
 

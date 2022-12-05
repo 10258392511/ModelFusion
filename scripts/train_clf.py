@@ -3,10 +3,8 @@ import os
 
 # This script should be run at the project root: */ModelFusion
 
-path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append('/cluster/project/infk/cvg/students/junwang/')
 
-if not path in sys.path:
-    sys.path.append(path)
 
 
 import argparse

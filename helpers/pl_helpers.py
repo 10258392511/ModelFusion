@@ -105,7 +105,7 @@ class TrainSeg(pl.LightningModule):
 
     def configure_optimizers(self):
         opt = Novograd(self.model.parameters(), lr=self.lr)
-        scheduler = ReduceLROnPlateau(opt, mode="max", patience=5, factor=0.5, min_lr=1e-6)
+        scheduler = ReduceLROnPlateau(opt, mode="max", factor=0.5, min_lr=1e-6)
         opt_config = {
             "optimizer": opt,
             "lr_scheduler": {
@@ -127,8 +127,9 @@ class TrainClf(pl.LightningModule):
         self.ds_dict = ds_dict
         self.batch_size = TRAINER_CONFIGS.Classification.batch_size
         self.lr = TRAINER_CONFIGS.Classification.lr
+        self.weight_decay = TRAINER_CONFIGS.Classification.weight_decay
         self.num_epochs = TRAINER_CONFIGS.Classification.num_epochs
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
         metrics = MetricCollection([Accuracy()])
         self.train_metrics = metrics.clone(prefix="train_")
         self.val_metrics = metrics.clone(prefix="val_")
@@ -181,8 +182,10 @@ class TrainClf(pl.LightningModule):
         return loader
 
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        scheduler = ReduceLROnPlateau(opt, mode="max", patience=5, factor=0.5, min_lr=1e-6)
+        opt = torch.optim.AdamW(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        # scheduler = ReduceLROnPlateau(opt, mode="max", patience=5, factor=0.5, min_lr=1e-6)
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=self.lr,
+                                             steps_per_epoch=len(self.train_dataloader()), epochs=self.num_epochs)
         opt_config = {
             "optimizer": opt,
             "lr_scheduler": {

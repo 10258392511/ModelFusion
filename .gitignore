@@ -5,3 +5,4 @@ dev/
 *.egg*
 *logs/
 *.ipynb_checkpoints/
+lsf.*
