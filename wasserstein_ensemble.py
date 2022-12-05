@@ -42,7 +42,7 @@ def get_histogram(args, idx, cardinality, layer_name, activations=None, return_n
         else:
             return torch.softmax(unnormalized_weights / args.softmax_temperature, dim=0)
 
-def get_wassersteinized_layers_modularized(args, networks, activations=None, eps=1e-7, test_loader=None):
+def get_wassersteinized_layers_modularized(args, networks, activations=None, eps=1e-7, test_loader=None, return_T=False):
     '''
     Two neural networks that have to be averaged in geometric manner (i.e. layerwise).
     The 1st network is aligned with respect to the other via wasserstein distance.
@@ -59,6 +59,8 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
     # simple_model_1 = get_trained_model(1, model='simplenet')
 
     avg_aligned_layers = []
+    if return_T:
+        T_list = []
     # cumulative_T_var = None
     T_var = None
     # print(list(networks[0].parameters()))
@@ -77,6 +79,12 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
     num_layers = len(list(zip(networks[0].parameters(), networks[1].parameters())))
     for idx, ((layer0_name, fc_layer0_weight), (layer1_name, fc_layer1_weight)) in \
             enumerate(zip(networks[0].named_parameters(), networks[1].named_parameters())):
+
+        ### dev
+        assert fc_layer0_weight.ndim == fc_layer1_weight.ndim
+        if fc_layer0_weight.ndim < 4:
+            continue
+        ###
 
         assert fc_layer0_weight.shape == fc_layer1_weight.shape
         print("Previous layer shape is ", previous_layer_shape)
@@ -101,8 +109,10 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
 
         if idx == 0:
             if is_conv:
-                M = ground_metric_object.process(fc_layer0_weight_data.view(fc_layer0_weight_data.shape[0], -1),
-                                fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1))
+                # M = ground_metric_object.process(fc_layer0_weight_data.view(fc_layer0_weight_data.shape[0], -1),
+                #                 fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1))
+                M = ground_metric_object.process(fc_layer0_weight_data.reshape(fc_layer0_weight_data.shape[0], -1),
+                                                 fc_layer1_weight_data.reshape(fc_layer1_weight_data.shape[0], -1))
                 # M = cost_matrix(fc_layer0_weight_data.view(fc_layer0_weight_data.shape[0], -1),
                 #                 fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1))
             else:
@@ -120,11 +130,20 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             # aligned_wt = None, this caches the tensor and causes OOM
             if is_conv:
                 T_var_conv = T_var.unsqueeze(0).repeat(fc_layer0_weight_data.shape[2], 1, 1)
+                ### dev
+                print(f"{layer0_name}, {layer1_name}")
+                print(f"T_var_conv: {T_var_conv.shape}")
+                print(f"fc_layer0_weight_data: {fc_layer1_weight_data.permute(2, 0, 1).shape}")
+                ###
                 aligned_wt = torch.bmm(fc_layer0_weight_data.permute(2, 0, 1), T_var_conv).permute(1, 2, 0)
 
+                # M = ground_metric_object.process(
+                #     aligned_wt.contiguous().view(aligned_wt.shape[0], -1),
+                #     fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1)
+                # )
                 M = ground_metric_object.process(
                     aligned_wt.contiguous().view(aligned_wt.shape[0], -1),
-                    fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1)
+                    fc_layer1_weight_data.reshape(fc_layer1_weight_data.shape[0], -1)
                 )
             else:
                 if fc_layer0_weight.data.shape[1] != T_var.shape[0]:
@@ -218,19 +237,32 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             print("this is past correction for weight mode")
             print("Shape of aligned wt is ", aligned_wt.shape)
             print("Shape of fc_layer0_weight_data is ", fc_layer0_weight_data.shape)
-            t_fc0_model = torch.matmul(T_var.t(), aligned_wt.contiguous().view(aligned_wt.shape[0], -1))
+            # t_fc0_model = torch.matmul(T_var.t(), aligned_wt.contiguous().view(aligned_wt.shape[0], -1))
+            t_fc0_model = torch.matmul(T_var.t(), aligned_wt.contiguous().reshape(aligned_wt.shape[0], -1))
         else:
-            t_fc0_model = torch.matmul(T_var.t(), fc_layer0_weight_data.view(fc_layer0_weight_data.shape[0], -1))
-
+            # t_fc0_model = torch.matmul(T_var.t(), fc_layer0_weight_data.view(fc_layer0_weight_data.shape[0], -1))
+            t_fc0_model = torch.matmul(T_var.t(), fc_layer0_weight_data.reshape(fc_layer0_weight_data.shape[0], -1))
         # Average the weights of aligned first layers
-        if args.ensemble_step != 0.5:
-            geometric_fc = ((1-args.ensemble_step) * t_fc0_model +
-                            args.ensemble_step * fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1))
+        ###
+        if torch.allclose(T_var, torch.tensor(0.).to(T_var.device)):
+            fc_layer1_weight_data_temp = fc_layer1_weight_data.reshape(fc_layer1_weight_data.shape[0], -1)
+            geometric_fc = (t_fc0_model + fc_layer1_weight_data_temp) / 1
+            assert torch.allclose(geometric_fc, fc_layer1_weight_data_temp)
+        ###
+        elif args.ensemble_step != 0.5:
+            # geometric_fc = ((1-args.ensemble_step) * t_fc0_model +
+            #                 args.ensemble_step * fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1))
+            geometric_fc = ((1 - args.ensemble_step) * t_fc0_model +
+                            args.ensemble_step * fc_layer1_weight_data.reshape(fc_layer1_weight_data.shape[0], -1))
         else:
-            geometric_fc = (t_fc0_model + fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1))/2
+            # geometric_fc = (t_fc0_model + fc_layer1_weight_data.view(fc_layer1_weight_data.shape[0], -1))/2
+            geometric_fc = (t_fc0_model + fc_layer1_weight_data.reshape(fc_layer1_weight_data.shape[0], -1))/2
         if is_conv and layer_shape != geometric_fc.shape:
             geometric_fc = geometric_fc.view(layer_shape)
         avg_aligned_layers.append(geometric_fc)
+
+        if return_T:
+            T_list.append(T_var)
 
         # get the performance of the model 0 aligned with respect to the model 1
         if args.eval_aligned:
@@ -243,6 +275,9 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             setattr(args, 'model0_aligned_acc_layer_{}'.format(str(idx)), acc)
             if idx == (num_layers - 1):
                 setattr(args, 'model0_aligned_acc', acc)
+
+    if return_T:
+        return avg_aligned_layers, T_list
 
     return avg_aligned_layers
 
