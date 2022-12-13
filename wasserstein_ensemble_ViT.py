@@ -23,6 +23,7 @@ class ViTFuser(object):
     def __init__(self, models: List[nn.Module], configs):
         self.models = models
         self.configs = configs
+        self.patch_embd_T = None
 
     def __call__(self):
         non_fc_params = []
@@ -41,7 +42,7 @@ class ViTFuser(object):
         #########################
 
         # TODO: fuse fc layers
-
+        aligned_fc_params_dict = self._fuse_fc_weights(fc_params)
         # TODO: load the state_dict of the first model with new weights
 
         # TODO: return aligned model
@@ -59,6 +60,36 @@ class ViTFuser(object):
                 non_fc_params[name] = param
 
         return non_fc_params, fc_params
+
+    def _fuse_fc_weights(self, params: List[OrderedDict]):
+        """
+        Fuse all the weights of the Fully Connected Layer
+        the source code of ViT: https://github.com/Project-MONAI/MONAI/blob/dev/monai/networks/nets/vit.py
+        Two parts need to be aligned: 
+            1. TransformerBlock
+            2. Classification Head
+
+        The classification head is much easier: it only contains weights hidden_size*num_classes, to be specific: 768*100
+
+        For the TransformerBlock, there are another two blocks inside, the multi-head-attention block and simple MLP
+        Let's start from the easy part, for the MLP, it only contains two layers of FC, the first layer's size of 768*3072,
+        the second layer's size if 3072*768
+
+        For the MHA block, it contains serveral parts. The first one is qkv projection layer, which is just a FC layer
+        of size 768*(3*768). The next part is dot product layey, but it has no parameters. The third part is out-projection
+        layer, which is still a single layer of FC of size 768*768.
+
+        Overall, the work here is to fuse multiple FC layer.
+        """
+        aligned_weights = OrderedDict()
+        for key in params[0]:
+            model_weight1 = params[0][key]
+            model_weight2 = params[1][key]
+            if model_weight1.ndim != 2:
+                continue
+            aligned_weights[key] = self._manual_align_next_layer(model_weight1, model_weight2, self.patch_embd_T)
+        
+        return aligned_weights
 
     def _fuse_non_fc_weights(self, params: List[OrderedDict]):
         """
@@ -83,6 +114,7 @@ class ViTFuser(object):
                                                                         return_T=True)
         avg_aligned_weights = avg_aligned_weights[-1]
         T_var = T_list[-1]  # (768, 768)
+        self.patch_embd_T = T_var
         aligned_weights[patch_emb_key] = avg_aligned_weights
         for key in params[0]:
             model_weight1 = params[0][key]
