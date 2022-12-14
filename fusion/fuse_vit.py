@@ -42,6 +42,11 @@ def fuse_vits(model1_path: str, model2_path: str):
     fuser()
 
 def main():
+
+    """
+    model can be downloaded from: https://polybox.ethz.ch/index.php/s/FotPNs3BLC6Byzg
+    """
+
     model1_path = os.path.join(ROOT_DIR, 'clf_logs/2022_12_13_23_55_00_073244')
     model2_path = os.path.join(ROOT_DIR, 'clf_logs/2022_12_13_23_55_00_086375')
     fuse_vits(model1_path, model2_path)
