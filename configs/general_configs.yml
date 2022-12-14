@@ -30,6 +30,10 @@ models:
   ViT:
     in_channels: 3
     patch_size: 2
+    hidden_size: 128
+    mlp_dim: 512
+    num_layers: 8
+    num_heads: 8
     img_size: [32, 32]
     pos_embed: "conv"
     classification: true

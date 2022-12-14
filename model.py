@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import sys
-PATH_TO_CIFAR = "./cifar/"
+PATH_TO_CIFAR = "/home/junchi/deepl_learning/ModelFusion/cifar"
 sys.path.append(PATH_TO_CIFAR)
 import train as cifar_train
 

@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-import ModelFusion.helpers.pytorch_utils as ptu
+import helpers.pytorch_utils as ptu
 
-from .wasserstein_ensemble import get_wassersteinized_layers_modularized
-from .wasserstein_ensemble_u_net import ModelWrapper
+from wasserstein_ensemble import get_wassersteinized_layers_modularized
+from wasserstein_ensemble_u_net import ModelWrapper
 from collections import OrderedDict
 from typing import List
 
@@ -55,9 +55,9 @@ class ViTFuser(object):
         for name, param in model.named_parameters():
             weight_dim = param.ndim
             if weight_dim <= 2:
-                fc_params[name] = param
+                fc_params[name] = param.data
             else:
-                non_fc_params[name] = param
+                non_fc_params[name] = param.data
 
         return non_fc_params, fc_params
 
@@ -82,13 +82,143 @@ class ViTFuser(object):
         Overall, the work here is to fuse multiple FC layer.
         """
         aligned_weights = OrderedDict()
-        for key in params[0]:
-            model_weight1 = params[0][key]
-            model_weight2 = params[1][key]
-            if model_weight1.ndim != 2:
-                continue
-            aligned_weights[key] = self._manual_align_next_layer(model_weight1, model_weight2, self.patch_embd_T)
-        
+        key_list = list(params[0].keys())
+        # for idx, key in enumerate(params[0]):
+        #     model_weight1 = params[0][key]
+        #     model_weight2 = params[1][key]
+        #     if model_weight1.ndim != 2:
+        #         continue
+        #     if idx == 0:
+        #         # align the first fc layer
+        #         aligned_wt = self._manual_align_next_layer(model_weight1, model_weight2, self.patch_embd_T)
+        #     else:
+        #         cur_key = key
+        #         prev_key = key_list[idx - 1]
+        #         local_model1 = ModelWrapper([("cur", params[0][cur_key])])
+        #         local_model2 = ModelWrapper([("cur", params[1][cur_key])])
+        #         avg_aligned_weights, T_list = get_wassersteinized_layers_modularized(self.configs,
+        #                                                                              [local_model1, local_model2],
+        #                                                                              return_T=True)
+        #         pass
+        # align the backbone without the last normalization and classification head
+        idx = 0
+        T_last_layer = None
+        while idx < len(params[0])-3:
+            cur_key = key_list[idx]
+            if idx % 8 == 0:
+                if idx == 0:
+                    T_last_layer = self.patch_embd_T
+                # align the first fc layer
+                fc1_weight1 = params[0][cur_key]
+                fc1_weight2 = params[1][cur_key]
+                # post_multiple with the patch embedding T
+                assert T_last_layer is not None, "The patch embedding T should not be None"
+                fc1_weight1 = fc1_weight1 @ T_last_layer
+                # align the first and second fc layer
+                next_key = key_list[idx + 1]
+                fc2_weight1 = params[0][next_key]
+                fc2_weight2 = params[1][next_key]
+                # extract local models
+                local_model1 = ModelWrapper([("cur", fc1_weight1), ("next", fc2_weight1)])
+                local_model2 = ModelWrapper([("cur", fc1_weight2), ("next", fc2_weight2)])
+                # align the first and second fc layer
+                avg_aligned_weights, T_list = get_wassersteinized_layers_modularized(self.configs,
+                                                                                        [local_model1, local_model2],
+                                                                                        return_T=True)
+                aligned_weights[cur_key] = avg_aligned_weights[0]
+                aligned_weights[next_key] = avg_aligned_weights[1]
+                T_last_layer = T_list[-1]
+                idx += 2
+            elif idx % 8 == 2 or idx % 8 == 6:
+                assert "norm" in cur_key, "The current key should be norm*.weight"
+                # align the norm1.weight
+                norm1_weight1 = params[0][cur_key]
+                norm1_weight2 = params[1][cur_key]
+                # align manually
+                aligned_wt = self._manual_align_next_layer(norm1_weight1, norm1_weight2, T_last_layer)
+                aligned_weights[cur_key] = aligned_wt
+                idx += 1
+            elif idx % 8 == 3 or idx % 8 == 7:
+                assert "norm" in cur_key, "The current key should be norm*.bias"
+                # align the norm1.bias
+                norm1_bias1 = params[0][cur_key]
+                norm1_bias2 = params[1][cur_key]
+                # align manually
+                aligned_wt = self._manual_align_next_layer(norm1_bias1, norm1_bias2, T_last_layer)
+                aligned_weights[cur_key] = aligned_wt
+                idx += 1
+            elif idx % 8 == 4:
+                assert "attn.out_proj.weight" in cur_key, "The current key should be attn.out_proj.weight"
+                # align the attn.out_proj.weight
+                attn_out_proj_weight1 = params[0][cur_key]
+                attn_out_proj_weight2 = params[1][cur_key]
+                # post_multiple with the patch embedding T
+                assert T_last_layer is not None, "The patch embedding T should not be None"
+                attn_out_proj_weight1 = attn_out_proj_weight1 @ T_last_layer
+                # first align the attn.out_proj.weight
+                local_model1 = ModelWrapper([("cur", attn_out_proj_weight1)])
+                local_model2 = ModelWrapper([("cur", attn_out_proj_weight2)])
+                avg_aligned_weights, T_list = get_wassersteinized_layers_modularized(self.configs,
+                                                                                     [local_model1, local_model2],
+                                                                                     return_T=True)
+                aligned_weights[cur_key] = avg_aligned_weights[0]
+                T_last_layer = T_list[-1]
+                idx += 1
+            elif idx % 8 == 5:
+                assert "attn.qkv.weight" in cur_key, "The current key should be attn.qkv.weight"
+                # align the weight of q, k, v separately
+                aligned_qkv_weight = []
+                t_qkv = []
+                for i in range(3):
+                    # extract the q, k, v weights
+                    qkv_weight1 = params[0][cur_key][i*128:(i+1)*128, :]
+                    qkv_weight2 = params[1][cur_key][i*128:(i+1)*128, :]
+
+                    qkv_weight1 = qkv_weight1 @ T_last_layer
+                    local_model1 = ModelWrapper([("cur", qkv_weight1)])
+                    local_model2 = ModelWrapper([("cur", qkv_weight2)])
+                    avg_aligned_weights, T_list = get_wassersteinized_layers_modularized(self.configs,
+                                                                                            [local_model1, local_model2],
+                                                                                            return_T=True)
+                    aligned_qkv_weight.append(avg_aligned_weights[0])
+                    t_qkv.append(T_list[-1])
+                aligned_weights[cur_key] = torch.cat(aligned_qkv_weight, dim=0)
+                T_last_layer = t_qkv[-1] # the T of v should be used to align the next layer
+                idx += 1
+
+        assert idx == len(params[0])-3, "The idx should be the last normalization layer"
+        # align the last normalization layer
+        cur_key = key_list[idx]
+        norm1_weight1 = params[0][cur_key]
+        norm1_weight2 = params[1][cur_key]
+        # align manually
+        aligned_wt = self._manual_align_next_layer(norm1_weight1, norm1_weight2, T_last_layer)
+        aligned_weights[cur_key] = aligned_wt
+        idx += 1
+        # align the bias
+        cur_key = key_list[idx]
+        norm1_bias1 = params[0][cur_key]
+        norm1_bias2 = params[1][cur_key]
+        # align manually
+        aligned_wt = self._manual_align_next_layer(norm1_bias1, norm1_bias2, T_last_layer)
+        aligned_weights[cur_key] = aligned_wt
+        idx += 1
+        # align the head
+        cur_key = key_list[idx]
+        head1 = params[0][cur_key]
+        head2 = params[1][cur_key]
+        head1 = head1 @ T_last_layer
+        local_model1 = ModelWrapper([("cur", head1)])
+        local_model2 = ModelWrapper([("cur", head2)])
+        avg_aligned_weights = get_wassersteinized_layers_modularized(self.configs,
+                                                                                [local_model1, local_model2],
+                                                                                return_T=False)
+        aligned_weights[cur_key] = avg_aligned_weights[0]
+        idx += 1
+
+        assert idx == len(params[0]), "all layers should be aligned"
+        print("All layers are aligned")
+
         return aligned_weights
 
     def _fuse_non_fc_weights(self, params: List[OrderedDict]):
@@ -151,3 +281,5 @@ class ViTFuser(object):
             geometric_fc = (t_fc0_model + fc_layer1_weight_data) / 2
 
         return geometric_fc
+
+

@@ -10,7 +10,7 @@ from typing import List, Tuple
 
 
 class ModelWrapper(nn.Module):
-    def __init__(self, param_tuple_list: list[Tuple[str, torch.Tensor]]):
+    def __init__(self, param_tuple_list):
         super(ModelWrapper, self).__init__()
         for param_name, param in param_tuple_list:
             param = nn.Parameter(param.to(ptu.DEVICE))
