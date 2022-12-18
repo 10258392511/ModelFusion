@@ -10,7 +10,7 @@ from typing import List, Tuple
 
 
 class ModelWrapper(nn.Module):
-    def __init__(self, param_tuple_list: list[Tuple[str, torch.Tensor]]):
+    def __init__(self, param_tuple_list: List[Tuple[str, torch.Tensor]]):
         super(ModelWrapper, self).__init__()
         for param_name, param in param_tuple_list:
             param = nn.Parameter(param.to(ptu.DEVICE))
@@ -51,6 +51,11 @@ class UNetFuser(object):
         out_state_dict_temp = {}
         for node in nodes_topo_sorted:
             avg_weights = self._process_node(node)
+            # print(f"{node}:")
+            # print(f"model 1: {self.models_graph[0].nodes[node]['weight']}")
+            # print(f"model 2: {self.models_graph[1].nodes[node]['weight']}")
+            # print(f"fused: {avg_weights}")
+            # print("*" * 100)
             out_state_dict_temp[node] = avg_weights
 
         # transpose bask weights of ConvTranspose2d

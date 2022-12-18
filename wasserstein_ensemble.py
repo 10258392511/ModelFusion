@@ -245,6 +245,10 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             t_fc0_model = torch.matmul(T_var.t(), fc_layer0_weight_data.reshape(fc_layer0_weight_data.shape[0], -1))
         # Average the weights of aligned first layers
         ###
+        print(f"model1 before: {fc_layer0_weight_data}")
+        print(f"model1 after: {t_fc0_model}")
+        print(f"model2: {fc_layer1_weight_data}")
+        print("*" * 100)
         if torch.allclose(T_var, torch.tensor(0.).to(T_var.device)):
             print("zeros")
             print("-" * 100)
