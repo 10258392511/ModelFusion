@@ -1,13 +1,13 @@
 figsize_unit: 3.6
 datasets:
   MNMS:
-   path: "/cluster/project/infk/cvg/students/junwang/datasets/MnMsSlices"
+   path: "/home/junchi/deepl_learning/datasets/MnMsSlices"
    resize_shape: 256
    aug_rotate_deg: 15
    aug_noise_std: 0.1
 
   CIFAR10:
-    path: "/cluster/project/infk/cvg/students/junwang/datasets/CIFAR10"
+    path: "/home/junchi/deepl_learning/datasets/CIFAR10"
 
 models:
   UNet:

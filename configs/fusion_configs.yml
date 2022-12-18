@@ -16,7 +16,7 @@ clip_max: 5
 clip_min: 0
 config_dir: D:\testings\Python\TestingPython\ModelFusion\configurations
 config_file: null
-correction: true
+correction: True
 csv_dir: D:\testings\Python\TestingPython\ModelFusion\csv
 dataset: mnist
 debug: false
@@ -70,7 +70,7 @@ pool_relu: false
 prediction_wts: false
 prelu_acts: false
 print_distances: false
-proper_marginals: true
+proper_marginals: false
 recheck_acc: false
 recheck_cifar: false
 reg: 0.01

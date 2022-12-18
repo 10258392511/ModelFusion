@@ -4,7 +4,7 @@ import sys
 sys.path.append('/home/junchi/deepl_learning')
 
 import tensorflow
-
+import torch
 from helpers.load_model import reload_model
 from helpers.model2graph import export_as_onnx
 from wasserstein_ensemble_ViT import ViTFuser
@@ -39,7 +39,9 @@ def fuse_vits(model1_path: str, model2_path: str):
         print(f"{name}: {param.shape}, {param.ndim}")
 
     fuser = ViTFuser([model_1, model_2], config)
-    fuser()
+    fused_weights = fuser()
+    # save fused weights
+    torch.save(fused_weights, os.path.join(ROOT_DIR, "fused_weights.pth"))
 
 def main():
 
