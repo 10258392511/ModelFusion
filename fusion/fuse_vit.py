@@ -30,15 +30,15 @@ def fuse_vits(model1_path: str, model2_path: str):
     model_1 = reload_model(model_name, model1_path)
     model_2 = reload_model(model_name, model2_path)
 
-    model_1 = model_1
-    model_2 = model_2
+    # model_1 = model_1
+    # model_2 = model_2
 
     print(model_1)
 
     for name, param in model_1.named_parameters():
         print(f"{name}: {param.shape}, {param.ndim}")
 
-    fuser = ViTFuser([model_1, model_2], config)
+    fuser = ViTFuser([model_2, model_1], config)
     fused_weights = fuser()
     # save fused weights
     torch.save(fused_weights, os.path.join(ROOT_DIR, "fused_weights.pth"))

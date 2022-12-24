@@ -100,7 +100,7 @@ class GroundMetric:
 
         if not squared:
             print("dont leave off the squaring of the ground metric")
-            dist = dist ** (1/2)
+            dist = dist ** (1/100)
 
         return dist
 

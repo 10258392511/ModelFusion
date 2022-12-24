@@ -51,7 +51,9 @@ class ViTFuser(object):
         # TODO: return aligned model
         fused_params = OrderedDict()
         for key in model_2_params:
-            average_weight = (model_1_params[key] + model_2_params[key])/2
+            # average_weight = (aligned_params_dict[key] + model_2_params[key])/2
+            average_weight = aligned_params_dict[key]
+            # average_weight = (model_1_params[key]*0.1 + model_2_params[key]*0.9)
             fused_params[key] = average_weight
         return fused_params
 
@@ -143,6 +145,7 @@ class ViTFuser(object):
                 norm1_weight2 = params[1][cur_key]
                 # align manually
                 aligned_wt = self._manual_align_next_layer(norm1_weight1, norm1_weight2, T_last_layer)
+                # aligned_wt = norm1_weight1
                 aligned_weights[cur_key] = aligned_wt
                 idx += 1
             elif idx % 8 == 3 or idx % 8 == 7:
@@ -152,6 +155,7 @@ class ViTFuser(object):
                 norm1_bias2 = params[1][cur_key]
                 # align manually
                 aligned_wt = self._manual_align_next_layer(norm1_bias1, norm1_bias2, T_last_layer)
+                # aligned_wt = norm1_bias1
                 aligned_weights[cur_key] = aligned_wt
                 idx += 1
             elif idx % 8 == 4:
@@ -176,6 +180,17 @@ class ViTFuser(object):
                 # align the weight of q, k, v separately
                 aligned_qkv_weight = []
                 t_qkv = []
+                # qkv_weight1 = params[0][cur_key]  # (3L, L)
+                # qkv_weight2 = params[1][cur_key]  # (3L, L)
+                # qkv_weight1 = qkv_weight1 @ T_last_layer
+                # local_model1 = ModelWrapper([("cur", qkv_weight1)])
+                # local_model2 = ModelWrapper([("cur", qkv_weight2)])
+                # avg_aligned_weights, T_list = get_wassersteinized_layers_modularized(self.configs,
+                #                                                                         [local_model1, local_model2],
+                #                                                                         return_T=True)
+                # aligned_weights[cur_key] = avg_aligned_weights[0]
+                # T_last_layer = T_list[0][128 * 2:, 128 * 2:]  # the T of v should be used to align the next layer
+
                 for i in range(3):
                     # extract the q, k, v weights
                     qkv_weight1 = params[0][cur_key][i*128:(i+1)*128, :]
@@ -190,10 +205,10 @@ class ViTFuser(object):
                     aligned_qkv_weight.append(avg_aligned_weights[0])
                     t_qkv.append(T_list[-1])
                 aligned_weights[cur_key] = torch.cat(aligned_qkv_weight, dim=0)
-                T_last_layer = t_qkv[-1] # the T of v should be used to align the next layer
+                T_last_layer = t_qkv[-1]  # the T of v should be used to align the next layer
                 idx += 1
 
-        assert idx == len(params[0])-3, "The idx should be the last normalization layer"
+        assert idx == len(params[0]) - 3, "The idx should be the last normalization layer"
         # align the last normalization layer
         cur_key = key_list[idx]
         norm1_weight1 = params[0][cur_key]
@@ -218,8 +233,8 @@ class ViTFuser(object):
         local_model1 = ModelWrapper([("cur", head1)])
         local_model2 = ModelWrapper([("cur", head2)])
         avg_aligned_weights = get_wassersteinized_layers_modularized(self.configs,
-                                                                                [local_model1, local_model2],
-                                                                                return_T=False)
+                                                                    [local_model1, local_model2],
+                                                                    return_T=False)
         aligned_weights[cur_key] = avg_aligned_weights[0]
         idx += 1
 
@@ -233,7 +248,7 @@ class ViTFuser(object):
         Refer to wasserstein_ensemble line 159 for align columns of next weight matrix and
         line 244 for align rows of current weight matrix. (Together: W_{k} <- T_{k}^T @ W_{k} @ T_{k - 1} )
 
-        Returns fused patch_embedding (768, 3, 4, 4), cls_token (1, 1, 768) and position_embeddings (1, 64, 768); and
+        Returns fused patch_embedding (L, 3, 4, 4), cls_token (1, 1, L) and position_embeddings (1, 64, L); and
         transport matrix T for patch_embedding. Note T should be used to align the first fc layer.
         """
         # extract patch_embedding weight
@@ -250,7 +265,7 @@ class ViTFuser(object):
         avg_aligned_weights, T_list = get_wassersteinized_layers_modularized(self.configs, [local_model1, local_model2],
                                                                         return_T=True)
         avg_aligned_weights = avg_aligned_weights[-1]
-        T_var = T_list[-1]  # (768, 768)
+        T_var = T_list[-1]  # (L, L)
         self.patch_embd_T = T_var
         aligned_weights[patch_emb_key] = avg_aligned_weights
         for key in params[0]:
@@ -280,8 +295,8 @@ class ViTFuser(object):
         # # Average the weights of aligned first layer
         if torch.allclose(T_var, torch.tensor(0.).to(T_var.device)):
             fc_layer1_weight_data_temp = fc_layer1_weight_data.reshape(fc_layer1_weight_data.shape[0], -1)
-            geometric_fc = (t_fc0_model + fc_layer1_weight_data_temp) / 1
-            assert torch.allclose(geometric_fc, fc_layer1_weight_data_temp)
+            geometric_fc = (t_fc0_model + fc_layer1_weight_data_temp.squeeze()) / 1
+            assert torch.allclose(geometric_fc, fc_layer1_weight_data_temp.squeeze())
         elif args.ensemble_step != 0.5:
             geometric_fc = ((1 - args.ensemble_step) * t_fc0_model + args.ensemble_step * fc_layer1_weight_data)
         else:
