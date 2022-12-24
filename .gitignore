@@ -5,9 +5,6 @@ dev/
 *.egg*
 *logs/
 *.ipynb_checkpoints/
-<<<<<<< HEAD
 lsf.*
-=======
 dev_*
 configurations/
->>>>>>> 3eb0ea09be546601cd3581a2019e30c8097966ad

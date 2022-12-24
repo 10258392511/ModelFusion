@@ -82,8 +82,8 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
 
         ### dev
         assert fc_layer0_weight.ndim == fc_layer1_weight.ndim
-        if fc_layer0_weight.ndim < 4:
-            continue
+        # if fc_layer0_weight.ndim < 4:
+        #     continue
         ###
 
         assert fc_layer0_weight.shape == fc_layer1_weight.shape
