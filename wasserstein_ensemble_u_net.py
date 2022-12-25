@@ -4,7 +4,7 @@ import networkx as nx
 import warnings
 import ModelFusion.helpers.pytorch_utils as ptu
 
-from .wasserstein_ensemble import get_wassersteinized_layers_modularized
+from wasserstein_ensemble import get_wassersteinized_layers_modularized
 from ModelFusion.helpers.model2graph import model2graph_wrapper
 from typing import List, Tuple
 

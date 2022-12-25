@@ -45,7 +45,7 @@ importance: null
 learning_rate: 0.01
 load_models: ''
 log_interval: 100
-model_name: simplenet
+model_name: simplenetf
 momentum: 0.5
 n_epochs: 1
 no_random_trainloaders: false

@@ -89,3 +89,25 @@ def extract_patient_id(filename: str):
     assert len(patient_id) == 6
 
     return patient_id
+
+
+def create_filename(save_dir: str, filename: str) -> str:
+    filename_path = os.path.join(save_dir, filename)
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+
+    return filename_path
+
+
+def dict2filename(args_dict: dict, suffix=".txt") -> str:
+    filename = ""
+    for key, value in args_dict.items():
+        if key == "square_factor":
+            value = str(value).replace("/", "_")
+        filename += f"{key}_{value}_"
+
+    filename = filename.replace(".", "_")
+    filename = filename.replace("/", "")
+    filename = filename[:-1] + suffix
+
+    return filename
