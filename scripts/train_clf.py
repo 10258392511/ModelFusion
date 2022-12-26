@@ -72,7 +72,8 @@ if __name__ == '__main__':
             callbacks=callbacks,
             num_sanity_val_steps=-1,
             # precision=16,
-            max_epochs=lit_model.num_epochs
+            max_epochs=lit_model.num_epochs,
+            enable_progress_bar=False
             # max_epochs=5
         )
 
