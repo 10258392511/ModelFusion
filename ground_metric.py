@@ -100,7 +100,9 @@ class GroundMetric:
 
         if not squared:
             print("dont leave off the squaring of the ground metric")
-            dist = dist ** (1/2)
+            # dist = dist ** (1 / 2)  # 1 / 2
+            dist = dist ** eval(self.params.square_factor)
+            print(f"dist: {dist}")
 
         return dist
 

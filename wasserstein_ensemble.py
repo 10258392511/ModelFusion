@@ -82,8 +82,8 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
 
         ### dev
         assert fc_layer0_weight.ndim == fc_layer1_weight.ndim
-        if fc_layer0_weight.ndim < 4:
-            continue
+        # if fc_layer0_weight.ndim < 4:
+        #     continue
         ###
 
         assert fc_layer0_weight.shape == fc_layer1_weight.shape
@@ -231,6 +231,7 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
 
         print("Ratio of trace to the matrix sum: ", torch.trace(T_var) / torch.sum(T_var))
         print("Here, trace is {} and matrix sum is {} ".format(torch.trace(T_var), torch.sum(T_var)))
+        print(f"col sum: {T_var.sum(dim=0)}, row sum: {T_var.sum(dim=1)}")
         setattr(args, 'trace_sum_ratio_{}'.format(layer0_name), (torch.trace(T_var) / torch.sum(T_var)).item())
 
         if args.past_correction:
@@ -244,7 +245,13 @@ def get_wassersteinized_layers_modularized(args, networks, activations=None, eps
             t_fc0_model = torch.matmul(T_var.t(), fc_layer0_weight_data.reshape(fc_layer0_weight_data.shape[0], -1))
         # Average the weights of aligned first layers
         ###
+        print(f"model1 before: {fc_layer0_weight_data}")
+        print(f"model1 after: {t_fc0_model}")
+        print(f"model2: {fc_layer1_weight_data}")
+        print("*" * 100)
         if torch.allclose(T_var, torch.tensor(0.).to(T_var.device)):
+            print("zeros")
+            print("-" * 100)
             fc_layer1_weight_data_temp = fc_layer1_weight_data.reshape(fc_layer1_weight_data.shape[0], -1)
             geometric_fc = (t_fc0_model + fc_layer1_weight_data_temp) / 1
             assert torch.allclose(geometric_fc, fc_layer1_weight_data_temp)

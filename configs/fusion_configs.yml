@@ -16,7 +16,7 @@ clip_max: 5
 clip_min: 0
 config_dir: D:\testings\Python\TestingPython\ModelFusion\configurations
 config_file: null
-correction: false
+correction: true
 csv_dir: D:\testings\Python\TestingPython\ModelFusion\csv
 dataset: mnist
 debug: false
@@ -37,21 +37,22 @@ geom_ensemble_type: wts
 gpu_id: 0
 gromov: false
 gromov_loss: square_loss
-ground_metric: euclidean
-ground_metric_eff: false
-ground_metric_normalize: log
+ground_metric: euclidean  # euclidean, cosine
+ground_metric_eff: true
+ground_metric_normalize: none
 handle_skips: false
 importance: null
 learning_rate: 0.01
 load_models: ''
 log_interval: 100
-model_name: simplenet
+model_name: simplenetf
 momentum: 0.5
 n_epochs: 1
 no_random_trainloaders: false
 normalize_acts: false
 normalize_wts: false
-not_squared: false
+not_squared: true
+square_factor: 1 / 8
 num_hidden_nodes: 400
 num_hidden_nodes1: 400
 num_hidden_nodes2: 200
@@ -62,7 +63,7 @@ options_type: generic
 partial_reshape: false
 partition_dataloader: -1
 partition_type: labels
-past_correction: false
+past_correction: true
 personal_class_idx: 9
 personal_split_frac: 0.1
 pool_acts: false

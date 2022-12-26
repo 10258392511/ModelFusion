@@ -32,6 +32,7 @@ def fuse_u_nets(model1_path: str, model2_path: str) -> nn.Module:
 
     # using UNetFuser
     configs = load_yml_file(os.path.join(ROOT_DIR, "configs/fusion_configs.yml"))
+    # print(configs.ensemble_step)
     fuser = UNetFuser(models, onnx_paths, configs)
     model_out = fuser()
 
