@@ -6,9 +6,10 @@ Segmentation:
   num_workers: 0
 
 Classification:
-  num_epochs: 150
+  # num_epochs: 150
+  num_epochs: 40
   batch_size: 32
-  lr: 0.001
+  lr: 0.0001
   weight_decay: 0.0001
   num_cls: 10
   num_workers: 0

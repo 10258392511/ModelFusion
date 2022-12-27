@@ -7,7 +7,7 @@ from data import get_dataloader
 import sys
 PATH_TO_CIFAR = "./cifar/"
 sys.path.append(PATH_TO_CIFAR)
-import train as cifar_train
+# import train as cifar_train
 import copy
 
 def get_trained_model(args, id, random_seed, train_loader, test_loader):

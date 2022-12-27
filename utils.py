@@ -6,10 +6,10 @@ import collections
 import numpy as np
 import ot
 import sys
-PATH_TO_CIFAR = "/home/junchi/deepl_learning/ModelFusion/cifar/"
+PATH_TO_CIFAR = "/cluster/project/infk/cvg/students/junwang/ModelFusion/cifar/"
 sys.path.append(PATH_TO_CIFAR)
 import train as cifar_train
-PATH_TO_VGG = "/home/junchi/deepl_learning/ModelFusion/cifar/models/"
+PATH_TO_VGG = "/cluster/project/infk/cvg/students/junwang/ModelFusion/cifar/models/"
 sys.path.append(PATH_TO_VGG)
 import vgg
 import partition
