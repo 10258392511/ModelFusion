@@ -1,13 +1,15 @@
 figsize_unit: 3.6
 datasets:
   MNMS:
-   path: "/cluster/project/infk/cvg/students/junwang/datasets/MnMsSlices"
+#   path: "/cluster/project/infk/cvg/students/junwang/datasets/MnMsSlices"
+   path: "E:/Datasets/MnMsSlices"
    resize_shape: 256
    aug_rotate_deg: 15
    aug_noise_std: 0.1
 
   CIFAR10:
-    path: "/cluster/project/infk/cvg/students/junwang/datasets/CIFAR10"
+#    path: "/cluster/project/infk/cvg/students/junwang/datasets/CIFAR10"
+    path: "E:/Datasets/CIFAR10"
 
 models:
   UNet:
@@ -41,3 +43,18 @@ models:
     num_classes: 10
     post_activation: Identity
 
+weights:
+    UNet:
+      domain_generalization:
+        model_1: "https://polybox.ethz.ch/index.php/s/piDYhR373oBdVt8/download"
+        model_2: "https://polybox.ethz.ch/index.php/s/zc2eq3XUhH1QaG3/download"
+      data_parallel_A:
+        model_1: "TBD"
+        model_2: "TBD"
+      data_parallel_B:
+        model_1: "TBD"
+        model_2: "TBD"
+    ViT:
+      data_parallel:
+        model_1: "https://polybox.ethz.ch/index.php/s/vLmUhjZ0K4TwqFm/download"
+        model_2: "https://polybox.ethz.ch/index.php/s/pfIdDnpDxlCNTbX/download"

@@ -3,7 +3,7 @@ import os
 
 # This script should be run at the project root: */ModelFusion
 
-sys.path.append('/cluster/project/infk/cvg/students/junwang/')
+# sys.path.append('/cluster/project/infk/cvg/students/junwang/')
 
 
 import argparse

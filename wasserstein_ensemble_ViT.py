@@ -35,20 +35,16 @@ class ViTFuser(object):
 
         # fuse non-fc layers
         aligned_non_fc_params_dict = self._fuse_non_fc_weights(non_fc_params)
-        # TODO: comment this out
         print("-" * 100)
         for key, weight in aligned_non_fc_params_dict.items():
             print(f"{key}: {weight.device}, {weight.shape}")
         #########################
 
-        # TODO: fuse fc layers
         aligned_fc_params_dict = self._fuse_fc_weights(fc_params)
-        # TODO: load the state_dict of the first model with new weights
         # combine aligned non-fc and fc params
         aligned_params_dict = {**aligned_non_fc_params_dict, **aligned_fc_params_dict}
         model_1_params = self.models[0].state_dict()
         model_2_params = self.models[1].state_dict()
-        # TODO: return aligned model
         fused_params = OrderedDict()
         for key in model_2_params:
             # average_weight = (aligned_params_dict[key] + model_2_params[key])/2

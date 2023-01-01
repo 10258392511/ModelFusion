@@ -11,3 +11,4 @@ lsf.*
 *.out
 *.sbatch
 experiment/vit_retrain_log/
+results

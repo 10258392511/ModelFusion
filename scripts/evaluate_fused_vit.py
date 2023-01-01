@@ -3,8 +3,12 @@ from collections import OrderedDict
 import torch.nn as nn
 import os
 import sys
-sys.path.append('/home/junchi/deepl_learning')
-sys.path.append('/home/junchi/deepl_learning/ModelFusion')
+# sys.path.append('/home/junchi/deepl_learning')
+# sys.path.append('/home/junchi/deepl_learning/ModelFusion')
+path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+if not path in sys.path:
+    sys.path.append(path)
 
 import tensorflow
 import torch
@@ -60,11 +64,6 @@ def main():
     # read args using argparse
     import argparse
     parser = argparse.ArgumentParser()
-    # parser.add_argument("--model1_path", type=str, default="/home/junchi/deepl_learning/ModelFusion/clf_logs/2022_12_13_23_55_00_073244")
-    # parser.add_argument("--model2_path", type=str, default="/home/junchi/deepl_learning/ModelFusion/clf_logs/2022_12_13_23_55_00_086375")
-    # parser.add_argument("--config", type=str, default="/home/junchi/deepl_learning/ModelFusion/configs/wasserstein_ensemble_ViT.yml")
-    # parser.add_argument("--ds_name", type=str, default="CIFAR10")
-    # parser.add_argument("--model_name", type=str, default="ViT")
     parser.add_argument("--ensemble_step", type=float, default=0.3)
     parser.add_argument("--square_factor", type=str, default="1/2")
     parser.add_argument("--retrain_fraction", type=float, default=1.0)

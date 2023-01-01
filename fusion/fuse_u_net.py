@@ -11,7 +11,7 @@ for _ in range(2):
     ROOT_DIR = os.path.dirname(ROOT_DIR)
 
 
-def fuse_u_nets(model1_path: str, model2_path: str) -> nn.Module:
+def fuse_u_nets(model1_path: str, model2_path: str, configs=None) -> nn.Module:
     """
     model1_path and model2_path should be the directory where the logs are stores.
     E.g. clf_logs/2022_11_13_02_20_43_443389
@@ -31,7 +31,8 @@ def fuse_u_nets(model1_path: str, model2_path: str) -> nn.Module:
         export_as_onnx(model, input_shape, onnx_path)
 
     # using UNetFuser
-    configs = load_yml_file(os.path.join(ROOT_DIR, "configs/fusion_configs.yml"))
+    if configs is None:
+        configs = load_yml_file(os.path.join(ROOT_DIR, "configs/fusion_configs.yml"))
     # print(configs.ensemble_step)
     fuser = UNetFuser(models, onnx_paths, configs)
     model_out = fuser()

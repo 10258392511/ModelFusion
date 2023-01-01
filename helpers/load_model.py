@@ -40,6 +40,14 @@ def turn_off_bias(model: nn.Module):
             module.bias = None
 
 
+def average_two_models(model_1: nn.Module, model_2: nn.Module, ensemble_step: float):
+    new_state_dict = {}
+    for (name_1, weight_1), (name_2, weight_2) in zip(model_1.named_parameters(), model_2.named_parameters()):
+        assert name_1 == name_2
+        new_state_dict[name_1] = (1 - ensemble_step) * weight_1 + ensemble_step * weight_2
+
+    return new_state_dict
+
 REGISTERED_MODELS = {
     "UNet": UNet,
     "SwinUNETR": SwinUNETR,
