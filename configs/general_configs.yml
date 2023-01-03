@@ -49,11 +49,11 @@ weights:
         model_1: "https://polybox.ethz.ch/index.php/s/piDYhR373oBdVt8/download"
         model_2: "https://polybox.ethz.ch/index.php/s/zc2eq3XUhH1QaG3/download"
       data_parallel_A:
-        model_1: "TBD"
-        model_2: "TBD"
+        model_1: "https://polybox.ethz.ch/index.php/s/w9DXa1uysNHJam4/download"
+        model_2: "https://polybox.ethz.ch/index.php/s/pe0YaOxdFbnHeS3/download"
       data_parallel_B:
-        model_1: "TBD"
-        model_2: "TBD"
+        model_1: "https://polybox.ethz.ch/index.php/s/ZHHsMoxzTveFTER/download"
+        model_2: "https://polybox.ethz.ch/index.php/s/QMwWTnM4zDLGyw4/download"
     ViT:
       data_parallel:
         model_1: "https://polybox.ethz.ch/index.php/s/vLmUhjZ0K4TwqFm/download"
